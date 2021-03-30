@@ -28,8 +28,6 @@ public class HomeController {
 
     @RequestMapping(path="/index",method= RequestMethod.GET)
     public String getIndexPage(Model model, Page page){
-
-
         // DispatchServlet会把request的数据给model和page？
         // 方法调用前，SpringMVC会自动实例化Model和Page,并将Page注入给Model
         // 自动把page装到model里
@@ -43,12 +41,13 @@ public class HomeController {
         if(list!=null){
             // 用discusspost中的userid查询user完整信息并把它与原来的信息通过hashmap整合起来
             for(DiscussPost post:list){
+
                 Map<String,Object> map = new HashMap<>();
                 map.put("post",post);
                 User user = userService.findUserById(post.getUserId());
                 map.put("user",user);
-
                 discussPosts.add(map);
+
             }
         }
         model.addAttribute("discussPosts",discussPosts);

@@ -2,6 +2,8 @@ package com.nowcoder.community.controller;
 
 
 import com.nowcoder.community.service.AlphaService;
+import com.nowcoder.community.util.CommunityConstant;
+import com.nowcoder.community.util.CommunityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -9,8 +11,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Enumeration;
@@ -128,6 +132,52 @@ public class AlphaController {
     @ResponseBody
     public Map<String,>
     **/
+
+    // cookie示例
+    @RequestMapping(value = "/cookie/set",method = RequestMethod.GET)
+    @ResponseBody
+    public String setCookied(HttpServletResponse response){
+
+        // 创建cookie
+        Cookie cookie = new Cookie("code", CommunityUtil.generateUUID());
+        // 设置cookie生效的范围
+        cookie.setPath("/community/alpha");
+        // 设置cookie生存时间
+        cookie.setMaxAge(60*10);
+        // 发送cookie
+        response.addCookie(cookie);
+        return "set cookie";
+
+    }
+
+    @RequestMapping(value="/cookie/get",method = RequestMethod.GET)
+    @ResponseBody
+    public String getCookie(@CookieValue("code") String code){
+        System.out.println(code);
+        return "get cookie";
+    }
+
+    // Session示例
+    @RequestMapping(value="/session/set",method = RequestMethod.GET)
+    @ResponseBody   // 响应字符串
+    // Spring MVC自动创建Session并注入
+    public String setSession(HttpSession session){
+        session.setAttribute("id",1);
+        session.setAttribute("name","Test");
+        return "setSession";
+    }
+
+
+    @RequestMapping(value="/session/get",method = RequestMethod.GET)
+    @ResponseBody   // 响应字符串
+    // Spring MVC自动创建Session并注入
+    public String getSession(HttpSession session){
+        System.out.println(session.getId());
+        System.out.println(session.getAttribute("id"));
+        System.out.println(session.getAttribute("name"));
+        return "getSession";
+    }
+
 
 
 
