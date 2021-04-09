@@ -133,11 +133,11 @@ public class AlphaController {
     public Map<String,>
     **/
 
+
     // cookie示例
-    @RequestMapping(value = "/cookie/set",method = RequestMethod.GET)
+    @RequestMapping(value="/cookie/set",method = RequestMethod.GET)
     @ResponseBody
     public String setCookied(HttpServletResponse response){
-
         // 创建cookie
         Cookie cookie = new Cookie("code", CommunityUtil.generateUUID());
         // 设置cookie生效的范围
@@ -147,7 +147,6 @@ public class AlphaController {
         // 发送cookie
         response.addCookie(cookie);
         return "set cookie";
-
     }
 
     @RequestMapping(value="/cookie/get",method = RequestMethod.GET)
@@ -167,7 +166,6 @@ public class AlphaController {
         return "setSession";
     }
 
-
     @RequestMapping(value="/session/get",method = RequestMethod.GET)
     @ResponseBody   // 响应字符串
     // Spring MVC自动创建Session并注入
@@ -177,6 +175,18 @@ public class AlphaController {
         System.out.println(session.getAttribute("name"));
         return "getSession";
     }
+
+
+    // ajax示例
+    @RequestMapping(path="/ajax",method=RequestMethod.POST)
+    @ResponseBody
+    public String testAjax(String name,int age){
+        System.out.println(name);
+        System.out.println(age);
+        return CommunityUtil.getJSONString(0,"操作成功");
+    }
+
+
 
 
 

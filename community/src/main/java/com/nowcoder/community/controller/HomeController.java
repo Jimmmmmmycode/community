@@ -5,7 +5,9 @@ import com.nowcoder.community.entity.DiscussPost;
 import com.nowcoder.community.entity.Page;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.DiscussPostService;
+import com.nowcoder.community.service.LikeService;
 import com.nowcoder.community.service.UserService;
+import com.nowcoder.community.util.CommunityConstant;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,13 +20,16 @@ import java.util.List;
 import java.util.Map;
 
 @Controller
-public class HomeController {
+public class HomeController implements CommunityConstant {
 
     @Autowired
     private DiscussPostService discussPostService; // 查到主页帖子相关信息
 
     @Autowired
     private UserService userService; // 根据userid查到user相关信息
+
+    @Autowired
+    private LikeService likeService ;
 
     @RequestMapping(path="/index",method= RequestMethod.GET)
     public String getIndexPage(Model model, Page page){
@@ -36,7 +41,7 @@ public class HomeController {
         page.setRows(discussPostService.findDiscussPostsRows(0));  // 数据库中帖子数量总行数
         page.setPath("/index");
 
-        List<DiscussPost> list = discussPostService.findDiscussPosts(0,page.getoffset(),page.getLimit());
+        List<DiscussPost> list = discussPostService.findDiscussPosts(0,page.getOffset(),page.getLimit());
         List<Map<String,Object>> discussPosts = new ArrayList<>();
         if(list!=null){
             // 用discusspost中的userid查询user完整信息并把它与原来的信息通过hashmap整合起来
@@ -46,8 +51,12 @@ public class HomeController {
                 map.put("post",post);
                 User user = userService.findUserById(post.getUserId());
                 map.put("user",user);
-                discussPosts.add(map);
 
+                // 查询帖子的点赞数目
+                long likeCount = likeService.findEntityLikeCount(ENTITY_TYPE_POST,post.getId());
+                map.put("likeCount",likeCount);
+
+                discussPosts.add(map);
             }
         }
         model.addAttribute("discussPosts",discussPosts);

@@ -59,7 +59,7 @@ public class Page {
     // 数据库查询offset - 当前页起始行
     // 通过当前页页码算出当前页起始行
 
-    public int getoffset(){
+    public int getOffset(){
         // (current-1）*limit
         return (current-1)*limit;
     }

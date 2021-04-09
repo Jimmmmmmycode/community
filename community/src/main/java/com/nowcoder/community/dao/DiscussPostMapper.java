@@ -12,8 +12,20 @@ public interface DiscussPostMapper {
     // userId - 个人主页  =0 - 不拼到sql里（动态sql）
     // 分页功能 offset-每页起始行行号 limit- 每页最多显示的数据
     List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
+
     // 计算一共有多少页
     // @Param - 用于给参数取别名
     // 如果只有一个参数,并且在<if>中使用,则必须加别名
     int selectDiscussPostRows(@Param("userId") int userId);
+
+    // 返回增加行数
+    // 增加帖子的方法
+    int insertDiscussPost(DiscussPost discussPost);
+
+    // 查询帖子详情
+    DiscussPost selectDiscussPostById(int id);
+
+    // 更新帖子数量
+    int updateCommentCount(int id,int commentCount);
+
 }

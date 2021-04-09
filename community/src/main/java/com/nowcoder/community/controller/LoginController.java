@@ -5,11 +5,15 @@ import com.google.code.kaptcha.Producer;
 import com.nowcoder.community.entity.User;
 import com.nowcoder.community.service.UserService;
 import com.nowcoder.community.util.CommunityConstant;
+import com.nowcoder.community.util.CommunityUtil;
+import com.nowcoder.community.util.CookieUtil;
+import com.nowcoder.community.util.RedisKeyUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -19,12 +23,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 
 import javax.imageio.ImageIO;
 import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
 @Controller
 public class LoginController implements CommunityConstant {
 
@@ -38,6 +45,9 @@ public class LoginController implements CommunityConstant {
 
     @Value("${server.servlet.context-path}")
     private String contextPath;
+
+    @Autowired
+    private RedisTemplate redisTemplate;
 
     @RequestMapping(path="/register",method = RequestMethod.GET)
     public String getRegisterPage() {
@@ -88,6 +98,9 @@ public class LoginController implements CommunityConstant {
        }
         return "/site/operate-result";   // 跳转到操作结果页面
     }
+
+
+    /***
     // 浏览器在收到html中的图片路径时，向服务器发送请求获取图片
     @RequestMapping(path="/kaptcha",method=RequestMethod.GET)
     // 返回值 void - 向浏览器输出的是图片 ,不是字符串也不是网页,自己用Response对象手动向浏览器输出
@@ -108,24 +121,74 @@ public class LoginController implements CommunityConstant {
             logger.error("响应验证码失败"+e.getMessage());
         }
     }
+    ***/
+
+
+    // 浏览器在收到html中的图片路径时，向服务器发送请求获取图片
+    @RequestMapping(path="/kaptcha",method=RequestMethod.GET)
+    // 返回值 void - 向浏览器输出的是图片 ,不是字符串也不是网页,自己用Response对象手动向浏览器输出
+    public void getKaptcha(HttpServletResponse response /* 废弃, HttpSession session*/ ){
+        // 生成验证码时服务端需要记住,当浏览器再次访问服务器时好验证验证码对不对(在多个请求间使用)
+        // 不能存在浏览器端,否则很容易被盗取
+        // 生成验证码
+        String text = kaptchaProducer.createText();
+        BufferedImage image = kaptchaProducer.createImage(text);
+
+        // 废弃: 将验证码存入session
+        // 废弃: session.setAttribute("kaptcha",text); // 在session中也是以key-value对的形式保存
+
+
+        String kaptchaOwnner = CommunityUtil.generateUUID();
+        Cookie cookie = new Cookie("kaptchaOwner",kaptchaOwnner);
+        cookie.setPath(contextPath);
+        cookie.setMaxAge(60);
+        response.addCookie(cookie);
+
+        // 将验证码存入Redis
+        String redisKey = RedisKeyUtil.getKaptchKey(kaptchaOwnner);
+        redisTemplate.opsForValue().set(redisKey,text,120, TimeUnit.SECONDS);
+
+
+        // 将图片输出给浏览器
+        response.setContentType("image/png");  // 声明响应返回内容的格式
+        try {
+            OutputStream os = response.getOutputStream();  // 获取输出流 - 图片 - 字节流
+            ImageIO.write(image,"png",os); // 向浏览器输出图片,输出格式png,输出流 os
+        } catch (IOException e) {
+            logger.error("响应验证码失败"+e.getMessage());
+        }
+    }
+
+
+
+
+
     /**
      * @param username
      * @param password
      * @param code
      * @param rememberme   // 表单提交信息,用户名,密码,验证码,记住我
      * @param model        // 向视图传递数据
-     * @param session      // 获取存入服务器session的验证码
+     * // @param session      // 获取存入服务器session的验证码
      * @param response     // 用来给浏览器发送cookie
+     *  kaptchaOwner   // 该登录业务与服务器的cookie key
      * @return
      */
     @RequestMapping(path="/login",method =RequestMethod.POST) // 处理表单过来的数据
-    public String login( String username,String password,String code,boolean rememberme,
-                         Model model , HttpSession session,HttpServletResponse response){
+    public String login(String username, String password, String code, boolean rememberme,
+                        Model model /*,废弃 HttpSession session */, HttpServletResponse response,HttpServletRequest request ){
         // 检查验证码
-        String kapthca = (String) session.getAttribute("kaptcha"); // 强制类型转换
-        if(StringUtils.isBlank(kapthca)||StringUtils.isBlank(code)||!kapthca.equalsIgnoreCase(code)){
+        // 废弃: String kapthca = (String) session.getAttribute("kaptcha"); // 强制类型转换
+        String kaptchaOwner = CookieUtil.getValue(request,"kaptchaOwner");  // 解决@CookieValue会导致失效问题
+        String kaptcha = null ;
+        if(StringUtils.isNotBlank(kaptchaOwner)){ // 判断这个cookie是否失效
+            String redisKey = RedisKeyUtil.getKaptchKey(kaptchaOwner);
+            kaptcha = (String)redisTemplate.opsForValue().get(redisKey);
+        }
+
+        if(StringUtils.isBlank(kaptcha)||StringUtils.isBlank(code)||!kaptcha.equalsIgnoreCase(code)){
             model.addAttribute("codeMsg","验证码不正确!");
-            return "site/login";
+            return "/site/login";
         }
         // 检查账号，密码
         int expiredSeconds = rememberme ?REMEMBER_EXPIRED_SECONDS:DEFAULT_EXPIRED_SECONDS;
@@ -139,7 +202,7 @@ public class LoginController implements CommunityConstant {
         }else{
             model.addAttribute("usernameMsg",map.get("usernameMsg"));
             model.addAttribute("passwordMsg",map.get("passwordMsg"));
-            return "site/login";
+            return "/site/login";
         }
     }
     @RequestMapping(path="/logout",method=RequestMethod.GET)
