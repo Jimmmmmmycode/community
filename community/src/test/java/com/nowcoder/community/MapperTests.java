@@ -74,7 +74,7 @@ public class MapperTests {
 
     @Test
     public void testSelectPosts(){
-        List<DiscussPost> list = discussPostMapper.selectDiscussPosts(149,0,10); // 第一行10条数据
+        List<DiscussPost> list = discussPostMapper.selectDiscussPosts(149,0,10,0); // 第一行10条数据
         for(DiscussPost post:list){
             System.out.println(post);
         }

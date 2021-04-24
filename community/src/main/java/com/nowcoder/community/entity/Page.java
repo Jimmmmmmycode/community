@@ -8,10 +8,10 @@ public class Page {
     // 当前页码
     public int current = 1;
 
-    // 显示的上限
+    // 每页显示的上限
     private int limit = 10 ;
 
-    // 数据总数（用于计算总页数)
+    //  数据库中总记录行数(用于计算显示的总页数)
     private int rows;
 
     // 查询路径(用于复用分页链接)
@@ -47,7 +47,6 @@ public class Page {
             this.rows = rows;
         }
     }
-
     public String getPath() {
         return path;
     }
@@ -56,11 +55,8 @@ public class Page {
         this.path = path;
     }
 
-    // 数据库查询offset - 当前页起始行
-    // 通过当前页页码算出当前页起始行
-
+    // 计算数据库查询offset - 当前页的第一条数据在数据库中对应的起始行,通过当前页码算出当前页的第一条数据在数据库中对应的起始行
     public int getOffset(){
-        // (current-1）*limit
         return (current-1)*limit;
     }
 

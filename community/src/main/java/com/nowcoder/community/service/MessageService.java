@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Service
@@ -58,6 +59,11 @@ public class MessageService {
     }
 
 
+    // 删除私信
+    public int deleteMessage(int id) {
+        return messageMapper.updateStatus(Arrays.asList(new Integer[]{id}), 2);
+    }
+
     // 查询最新的通知
     public Message findLatestNotice(int userId,String topic){
         return messageMapper.selectLatestNotice(userId,topic);
@@ -71,5 +77,9 @@ public class MessageService {
     // 查询未读通知
     public int findNoticeUnreadCount(int userId,String topic){
         return messageMapper.selectNoticeUnreadCount(userId,topic);
+    }
+
+    public List<Message> findNotices(int userId,String topic,int offset,int limit){
+        return messageMapper.selectNotices(userId,topic,offset,limit);
     }
 }

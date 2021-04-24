@@ -11,7 +11,8 @@ import java.util.List;
 public interface DiscussPostMapper {
     // userId - 个人主页  =0 - 不拼到sql里（动态sql）
     // 分页功能 offset-每页起始行行号 limit- 每页最多显示的数据
-    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit);
+    // orderMode( 0 - 按时间排序 , 1 - 按帖子score排序 )
+    List<DiscussPost> selectDiscussPosts(int userId, int offset, int limit,int orderMode);
 
     // 计算一共有多少页
     // @Param - 用于给参数取别名
@@ -27,5 +28,14 @@ public interface DiscussPostMapper {
 
     // 更新帖子数量
     int updateCommentCount(int id,int commentCount);
+
+    // 修改帖子类型
+    int updateType(int id,int type);
+
+    // 修改帖子状态
+    int updateStatus(int id,int status);
+
+    // 修改分数
+    int updateScore(int id,double score);
 
 }
